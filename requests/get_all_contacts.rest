@@ -1,0 +1,11 @@
+GET http://localhost:3001/api/contacts
+###
+DELETE http://localhost:3001/api/contacts/3
+###
+POST http://localhost:3001/api/contacts/
+Content-Type: application/json
+
+{
+    "name": "Davor Komusanac",
+    "number": "091"
+}
