@@ -1,36 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
-
-let contacts = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
-const generateId = () => {
-  const maxId =
-    contacts.length > 0 ? Math.max(...contacts.map((n) => n.id)) : 0;
-  return maxId + 1;
-};
+const Contact = require("./models/contact");
 
 app.use(express.static("build"));
 app.use(cors());
@@ -45,7 +18,7 @@ morgan.token("postData", (request, response) => {
   return JSON.stringify(request.body);
 });
 
-app.post("/api/contacts", (req, res) => {
+app.post("/api/contacts", (req, res, next) => {
   const body = req.body;
 
   if (!body.name || !body.number) {
@@ -54,55 +27,97 @@ app.post("/api/contacts", (req, res) => {
     });
   }
 
-  if (contacts.find((el) => el.name === body.name)) {
+  const contact = new Contact({
+    name: body.name,
+    number: body.number,
+  });
+
+  contact
+    .save()
+    .then((savedContact) => {
+      res.json(savedContact);
+    })
+    .catch((error) => next(error));
+});
+
+app.put("/api/contacts/:id", (req, res, next) => {
+  const body = req.body;
+
+  if (!body.name || !body.number) {
     return res.status(400).json({
-      error: "Name must be unique",
+      error: "Both name and number are required",
     });
   }
 
   const contact = {
-    id: generateId(),
     name: body.name,
-    number: body.number || "",
+    number: body.number,
   };
 
-  contacts = contacts.concat(contact);
-  res.json(contact);
+  Contact.findByIdAndUpdate(req.params.id, contact, { new: true })
+    .then((updatedContact) => {
+      res.json(updatedContact);
+    })
+    .catch((error) => next(error));
 });
 
 app.get("/info", (req, res) => {
   const date = new Date();
 
-  res.send(`
-    <div>
-    <p>Phonebook has info for ${contacts.length} people</p>
-    <p>${date}</p>
-    </div> 
-    `);
+  Contact.find({}).then((contacts) => {
+    res.send(`
+  <div>
+  <p>Phonebook has info for ${contacts.length} people</p>
+  <p>${date}</p>
+  </div> 
+  `);
+  });
 });
 
 app.get("/api/contacts", (req, res) => {
-  res.json(contacts);
+  Contact.find({}).then((contacts) => {
+    res.json(contacts);
+  });
 });
 
-app.get("/api/contacts/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const contact = contacts.find((contact) => contact.id === id);
+app.get("/api/contacts/:id", (req, res, next) => {
+  Contact.findById(req.params.id)
+    .then((contact) => {
+      if (contact) {
+        res.json(contact);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
 
-  if (contact) {
-    res.json(contact);
-  } else {
-    res.status(404).end();
+app.delete("/api/contacts/:id", (req, res, next) => {
+  Contact.findByIdAndRemove(req.params.id)
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, req, res, next) => {
+  console.log(error.message);
+
+  if (error.name === "CastError") {
+    return res.status(400).send({ error: "malformatted id" });
   }
-});
 
-app.delete("/api/contacts/:id", (req, res) => {
-  const id = Number(req.params.id);
-  contacts = contacts.filter((contact) => contact.id !== id);
-  res.status(204).end();
-});
+  next(error);
+};
+app.use(errorHandler);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

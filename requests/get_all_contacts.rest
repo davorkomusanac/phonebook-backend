@@ -1,11 +1,22 @@
 GET http://localhost:3001/api/contacts
 ###
-DELETE http://localhost:3001/api/contacts/3
+GET http://localhost:3001/api/contacts/15s
+###
+DELETE http://localhost:3001/api/contacts/631dacc59817df5e0a78ed84
 ###
 POST http://localhost:3001/api/contacts/
 Content-Type: application/json
 
 {
-    "name": "Davor Komusanac",
+    "name": "Davord Komusanac",
     "number": "091"
+}
+
+###
+PUT http://localhost:3001/api/contacts/631dac8b30903d0d1c84272f
+Content-Type: application/json
+
+{
+    "name": "Davor",
+    "number": "NOVIBROJ"
 }
