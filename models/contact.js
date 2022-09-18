@@ -14,8 +14,25 @@ mongoose
   });
 
 const contactSchema = new mongoose.Schema({
-  name: String,
-  number: String,
+  name: {
+    type: String,
+    minLength: 3,
+    required: true,
+  },
+  number: {
+    type: String,
+    minLength: 8,
+    required: true,
+    validate: {
+      validator: function (v) {
+        const a = /\d{2}-\d{6,}/.test(v);
+        const b = /\d{3}-\d{5,}/.test(v);
+        const c = /^[0-9]{8,}$/.test(v);
+        return a || b || c;
+      },
+      message: "Wrong number format",
+    },
+  },
 });
 
 contactSchema.set("toJSON", {

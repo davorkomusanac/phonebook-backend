@@ -21,40 +21,35 @@ morgan.token("postData", (request, response) => {
 app.post("/api/contacts", (req, res, next) => {
   const body = req.body;
 
-  if (!body.name || !body.number) {
-    return res.status(400).json({
-      error: "Both name and number are required",
-    });
-  }
+  Contact.find({ name: body.name }).then((result) => {
+    if (result.length !== 0) {
+      return res.status(400).json({
+        error: "name must be unique",
+      });
+    } else {
+      const contact = new Contact({
+        name: body.name,
+        number: body.number,
+      });
 
-  const contact = new Contact({
-    name: body.name,
-    number: body.number,
+      contact
+        .save()
+        .then((savedContact) => {
+          res.json(savedContact);
+        })
+        .catch((error) => next(error));
+    }
   });
-
-  contact
-    .save()
-    .then((savedContact) => {
-      res.json(savedContact);
-    })
-    .catch((error) => next(error));
 });
 
 app.put("/api/contacts/:id", (req, res, next) => {
-  const body = req.body;
+  const { name, number } = req.body;
 
-  if (!body.name || !body.number) {
-    return res.status(400).json({
-      error: "Both name and number are required",
-    });
-  }
-
-  const contact = {
-    name: body.name,
-    number: body.number,
-  };
-
-  Contact.findByIdAndUpdate(req.params.id, contact, { new: true })
+  Contact.findByIdAndUpdate(
+    req.params.id,
+    { name, number },
+    { new: true, runValidators: true, context: "query" }
+  )
     .then((updatedContact) => {
       res.json(updatedContact);
     })
@@ -111,6 +106,8 @@ const errorHandler = (error, req, res, next) => {
 
   if (error.name === "CastError") {
     return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).send({ error: error.message });
   }
 
   next(error);

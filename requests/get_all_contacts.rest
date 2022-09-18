@@ -8,8 +8,8 @@ POST http://localhost:3001/api/contacts/
 Content-Type: application/json
 
 {
-    "name": "Davord Komusanac",
-    "number": "091"
+    "name": "Dav",
+    "number": "0911245648"
 }
 
 ###
@@ -17,6 +17,6 @@ PUT http://localhost:3001/api/contacts/631dac8b30903d0d1c84272f
 Content-Type: application/json
 
 {
-    "name": "Davor",
-    "number": "NOVIBROJ"
+    "name": "Da",
+    "number": "22"
 }
